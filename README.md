@@ -24,7 +24,7 @@ This project provides an **Azure Function App** that:
 ---
 
 ## Repository Structure
-
+```
 weather-collector/
 │
 ├── DataCollectorFunc/ # Azure Function entrypoint
@@ -36,7 +36,7 @@ weather-collector/
 │ └── utils.py # Helper functions
 │
 └── .github/workflows/ # Deployment workflow
-
+```
 
 - **`DataCollectorFunc`**: Contains the function definition and configuration  
 - **`shared`**: Reusable Python modules used by the function  
