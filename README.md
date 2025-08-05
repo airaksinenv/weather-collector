@@ -19,9 +19,7 @@ This project provides an **Azure Function App** that:
 
 - Fetches **daily historical weather data** from FMI’s API  
 - Uses a Python-based function with a modular structure for easier maintenance  
-- Is designed for **GitHub → Azure Function** deployment, installing dependencies during the build phase  
-
----
+- Is designed for **GitHub → Azure Function** deployment, installing dependencies during the build phase
 
 ## Repository Structure
 ```
@@ -46,7 +44,7 @@ weather-collector/
 ## Installation & Usage
 
 ### Prerequisites
-- Python 3.9+  
+- Python 3.10
 - Azure Functions Core Tools (for local testing)  
 - GitHub Actions enabled for CI/CD (if deploying automatically)
 
@@ -55,4 +53,39 @@ weather-collector/
 2. Create a virtual environment and install required packages from `requirements.txt`
 3. Start the function app locally:
    ```bash
-   func start
+   python shared/main.py
+
+## Data sources
+
+### Daily weather data
+
+| Required field | Source | Parameter name |
+|:-:|:-:|:-:|
+| temp_avg | kriging_suomi_daily | DailyMeanTemperature |
+| temp_min | kriging_suomi_daily | MinimumTemperature24h |
+| temp_max | kriging_suomi_daily | MaximumTemperature24h |
+| prec | kriging_suomi_daily | Precipitation24h |
+| wind_speed_avg | - | - |
+| wind_speed_max | kriging_suomi_daily | MaximumWind |
+| wind_dir_avg | - | - |
+| rel_humid_avg | - | - |
+| rel_humid_max | - | - |
+| rel_humid_min | - | - |
+| global_rad | krging_suomi_daily | DailyGlobalRadiation |
+| vapour_press | - | - |
+| snow_depth | - | - |
+
+---
+
+
+### 3h weather data
+| Required field | Source | Parameter name |
+|:-:|:-:|:-:|
+| h | kriging_suomi_synop | - |
+| temp | kriging_suomi_synop | Temperature |
+| prec | kriging_suomi_synop | Precipitation3h |
+| wind_speed | kriging_suomi_synop | WindSpeedMS |
+| rel_humid | kriging_suomi_synop | Humidity |
+
+
+---
