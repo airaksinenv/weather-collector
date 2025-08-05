@@ -1,1 +1,4 @@
 requests
+azure-functions
+azure-storage-blob==12.25.1
+pandas==1.5.3
