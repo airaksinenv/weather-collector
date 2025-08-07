@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+#Functions
+
 def fetch_weather_data(startdate, enddate):
     """
     Fetches daily weather data from the Finnish Meteorological Institute's API using the provided API key, 
