@@ -5,6 +5,7 @@ import numpy as np
 from datetime import datetime
 from azure.storage.blob import BlobClient
 from dotenv import load_dotenv
+import logging
 
 load_dotenv()
 
@@ -122,7 +123,7 @@ def upload_weather_data(storage_account_name, container_name, filepath, data, fi
 
         # Upload to Azure Blob Storage
         blob_client.upload_blob(buffer, overwrite=True)
-        print(f"Successfully uploaded {filepath} to {container_name}.")
+        logging.info(f"Successfully uploaded {filepath} to {container_name}.")
 
     except Exception as e:
-        print(f"Error uploading blob data: {e}")
+        logging.warning(f"Error uploading blob data: {e}")

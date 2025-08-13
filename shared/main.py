@@ -3,24 +3,26 @@ try:
 except:
     from utils import fetch_fmi_data, upload_weather_data
 from datetime import datetime, timedelta
+import logging
+
 
 
 def main():
-    print("Running main.py...")
+    logging.info("Running main.py...")
     startdate = (datetime.now() - timedelta(days=2)).strftime('%Y-%m-%d')
     enddate = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
     
-    print('fetching data from kriging_suomi_daily...')
+    logging.info('fetching data from kriging_suomi_daily...')
     dailydf = fetch_fmi_data(startdate, enddate, 'daily')
-    print('Success!')
+    logging.info('Success!')
 
-    print('fetching data from kriging_suomi_synop...')
+    logging.info('fetching data from kriging_suomi_synop...')
     threeH = fetch_fmi_data(startdate, enddate, 'synop')
-    print('Success!')
+    logging.info('Success!')
 
-    print('fetching data from kriging_suomi_kasvukausi...')
+    logging.info('fetching data from kriging_suomi_kasvukausi...')
     tempsum = fetch_fmi_data(startdate, enddate, 'kasvukausi')
-    print('Success!')
+    logging.info('Success!')
 
     files = {
         'daily': dailydf,
@@ -32,7 +34,7 @@ def main():
         df.dropna(inplace=True)
         df.reset_index(drop=True ,inplace=True)
         if df.empty:
-            print(f'{label}.df had no viable rows')
+            logging.warning(f'{label}.df had no viable rows')
         else:
             filename = f"{label}-{(datetime.now() - timedelta(days=2)).strftime('%Y-%m-%d')}.csv"
             upload_weather_data(
