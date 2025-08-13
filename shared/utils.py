@@ -57,7 +57,8 @@ def fetch_fmi_data(startdate, enddate, model_type):
             'Precipitation24h', 'MaximumWind', 'DailyGlobalRadiation', 'VolumetricSoilWaterLayer1'
         ],
         "kasvukausi": ['EffectiveTemperatureSum'],
-        "synop": ['Temperature', 'Precipitation3h', 'WindSpeedMS', 'Humidity']
+        "synop": ['Temperature', 'WindSpeedMS', 'Humidity']
+        #Precipitation3h ei toimi
     }
 
     model_map = {
