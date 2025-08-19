@@ -58,7 +58,7 @@ weather-collector/
 3. Start the function app locally:
    ```bash
    python shared/main.py
-
+   ```
 ## Data sources
 
 ### Daily weather data
@@ -69,28 +69,35 @@ weather-collector/
 | temp_min | kriging_suomi_daily | MinimumTemperature24h |
 | temp_max | kriging_suomi_daily | MaximumTemperature24h |
 | prec | kriging_suomi_daily | Precipitation24h |
-| wind_speed_avg | - | - |
+| wind_speed_avg | kriging_suomi_hourly | WindSpeedMS |
 | wind_speed_max | kriging_suomi_daily | MaximumWind |
 | wind_dir_avg | - | - |
-| rel_humid_avg | - | - |
-| rel_humid_max | - | - |
-| rel_humid_min | - | - |
+| rel_humid_avg | kriging_suomi_hourly | Humidity |
+| rel_humid_max | kriging_suomi_hourly | Humidity |
+| rel_humid_min | kriging_suomi_hourly | Humidity |
 | global_rad | krging_suomi_daily | DailyGlobalRadiation |
-| vapour_press | - | - |
+| vapour_press | kriging_suomi_hourly | Temperature & Humidity ([Kaava 1](https://www.vaisala.com/fi/expert-article/relative-humidity-how-is-it-defined-and-calculated) & [Kaava 2](https://www.vaisala.com/fi/lp/make-your-job-easier-humidity-conversion-formulas))  |
 | snow_depth | - | - |
 
 ---
 
-
 ### 3h weather data
 | Required field | Source | Parameter name |
 |:-:|:-:|:-:|
-| h | kriging_suomi_synop | - |
 | temp | kriging_suomi_synop | Temperature |
-| prec | kriging_suomi_synop | Precipitation3h |
+| prec | - | - |
 | wind_speed | kriging_suomi_synop | WindSpeedMS |
 | rel_humid | kriging_suomi_synop | Humidity |
 
+---
+
+### 1h weather data
+| Required field | Source | Parameter name |
+|:-:|:-:|:-:|
+| - | kriging_suomi_hourly | Precipitation1h |
+| - | kriging_suomi_hourly | Humidity |
+| - | kriging_suomi_hourly | WindSpeedMS |
+| - | kriging_suomi_hourly | Temperature |
 
 ---
 

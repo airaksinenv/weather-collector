@@ -58,14 +58,16 @@ def fetch_fmi_data(startdate, enddate, model_type):
             'Precipitation24h', 'MaximumWind', 'DailyGlobalRadiation', 'VolumetricSoilWaterLayer1'
         ],
         "kasvukausi": ['EffectiveTemperatureSum'],
-        "synop": ['Temperature', 'WindSpeedMS', 'Humidity']
+        "synop": ['Temperature', 'WindSpeedMS', 'Humidity'],
+        "hourly": ['Precipitation1h', 'Humidity', 'WindSpeedMS', 'Temperature']
         #Precipitation3h ei toimi
     }
 
     model_map = {
         "daily": "kriging_suomi_daily",
         "kasvukausi": "kriging_suomi_kasvukausi",
-        "synop": "kriging_suomi_synop"
+        "synop": "kriging_suomi_synop",
+        "hourly": "kriging_suomi_hourly"
     }
 
     if model_type not in model_map:
@@ -83,6 +85,7 @@ def fetch_fmi_data(startdate, enddate, model_type):
         f"&timestep=data&precision=double"
     )
 
+    #print(url)
     resp = requests.get(url)
     resp.raise_for_status()
     data = resp.json()
