@@ -1,7 +1,7 @@
 try:
-    from shared.utils import fetch_fmi_data, upload_weather_data
+    from shared.utils import fetch_fmi_data, upload_weather_data, calculate_daily_from_hourly
 except:
-    from utils import fetch_fmi_data, upload_weather_data
+    from utils import fetch_fmi_data, upload_weather_data, calculate_daily_from_hourly
 from datetime import datetime, timedelta
 import logging
 
@@ -31,17 +31,23 @@ def main():
     #print('fetching data from kriging_suomi_hourly...')
     logging.info('fetching data from kriging_suomi_hourly...')
     hourly = fetch_fmi_data(startdate, enddate, 'hourly')
+    hourly.dropna(inplace=True)
+    hourly.reset_index(drop=True, inplace=True)
+    #print('Calculating daily data from kriging_suomi_hourly...')
+    logging.info('Calculating daily data from kriging_suomi_hourly...')
+    dailydf = calculate_daily_from_hourly(hourly, dailydf)
     #print('Success!')
     logging.info('Success!')
 
     files = {
         'daily': dailydf,
         '3h': threeH,
-        'tempsum': tempsum,
-        'hourly' : hourly
+        'tempsum': tempsum
     }
 
     for label, df in files.items():
+        #print(f"Processing {label}...")
+        logging.info(f"Processing {label}...")
         df.dropna(inplace=True)
         df.reset_index(drop=True ,inplace=True)
         if df.empty:
@@ -56,6 +62,7 @@ def main():
                 data=df,
                 file_type='csv'
             )
-
+            #print("Success!")
+            logging.info("Success!")
 if __name__ == "__main__":
     main()

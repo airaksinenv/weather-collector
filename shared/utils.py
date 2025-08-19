@@ -92,6 +92,60 @@ def fetch_fmi_data(startdate, enddate, model_type):
 
     return parse_fmi_data(data, params)
 
+def calculate_daily_from_hourly(hourlydf, dailydf):
+    """
+    Calculates new features to add to daily df using hourly data
+
+    Parameters:
+        hourlydf (pd.Dataframe) : Hourly weather data.
+        dailydf (pd.Dataframe) : Daily weather data.
+    Returns:
+        dailydf (pd.Dataframe) : Updated daily dataframe with extra features.
+    """
+    hourlydf["timestamp"] = pd.to_datetime(hourlydf["timestamp"])
+    dailydf["timestamp"] = pd.to_datetime(dailydf["timestamp"])
+
+    # Extract date only (ignoring time)
+    hourlydf["date"] = hourlydf["timestamp"].dt.date
+    dailydf["date"] = dailydf["timestamp"].dt.date
+
+    # Group by date + lat/lon and aggregate
+    agg_df = (
+        hourlydf.groupby(["date", "latitude", "longitude"])
+        .agg({
+            "Humidity": ["min", "max", "mean"],
+            "WindSpeedMS": ["mean"],
+        })
+    )
+
+    # Flatten multi-level columns
+    agg_df.columns = ['_'.join(col) for col in agg_df.columns]
+    agg_df = agg_df.reset_index()
+
+    # Rename to requested names
+    agg_df = agg_df.rename(columns={
+        "Humidity_mean": "rel_humid_avg",
+        "Humidity_max": "rel_humid_max",
+        "Humidity_min": "rel_humid_min",
+        "WindSpeedMS_mean": "wind_speed_avg",
+    })
+
+    # Round only mean values to 1 decimal
+    agg_df["rel_humid_avg"] = agg_df["rel_humid_avg"].round(1)
+    agg_df["wind_speed_avg"] = agg_df["wind_speed_avg"].round(1)
+
+    # Merge on date + lat/lon (keep timestamp from dailydf)
+    merged = pd.merge(
+        dailydf,
+        agg_df,
+        on=["date", "latitude", "longitude"],
+        how="left"
+    )
+
+    # Drop helper 'date' column (keep timestamp)
+    merged = merged.drop(columns=["date"])
+
+    return merged
 
 def upload_weather_data(storage_account_name, container_name, filepath, data, file_type='csv'):
     """
