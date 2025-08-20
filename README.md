@@ -103,6 +103,4 @@ weather-collector/
 
 ## TBA
 
-1. A new csv file is to be added to the blob daily, these files can then later be combined using a separate timer trigger function within this function app.
-2. Functions are not working, they are merely a skeleton atm, also need to figure out how to get the rest of the parameters for daily weather gathering
-3. Need to add a logic for collecting monthly data.
+- Need to add a logic for collecting monthly data.

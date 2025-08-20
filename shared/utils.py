@@ -92,6 +92,11 @@ def fetch_fmi_data(startdate, enddate, model_type):
 
     return parse_fmi_data(data, params)
 
+def vapour_pressure(temp_c, rel_humid):
+    es = 0.6108 * np.exp((17.27 * temp_c) / (temp_c + 237.3))  # kPa
+    ea = es * (rel_humid / 100.0)  # actual vapor pressure
+    return ea * 10
+
 def calculate_daily_from_hourly(hourlydf, dailydf):
     """
     Calculates new features to add to daily df using hourly data
@@ -109,12 +114,16 @@ def calculate_daily_from_hourly(hourlydf, dailydf):
     hourlydf["date"] = hourlydf["timestamp"].dt.date
     dailydf["date"] = dailydf["timestamp"].dt.date
 
+    # Calculate vapour pressure for each hourly row
+    hourlydf["vapour_press"] = vapour_pressure(hourlydf["Temperature"], hourlydf["Humidity"])
+
     # Group by date + lat/lon and aggregate
     agg_df = (
         hourlydf.groupby(["date", "latitude", "longitude"])
         .agg({
             "Humidity": ["min", "max", "mean"],
             "WindSpeedMS": ["mean"],
+            "vapour_press": ["mean"]
         })
     )
 
@@ -128,11 +137,13 @@ def calculate_daily_from_hourly(hourlydf, dailydf):
         "Humidity_max": "rel_humid_max",
         "Humidity_min": "rel_humid_min",
         "WindSpeedMS_mean": "wind_speed_avg",
+        "vapour_press_mean": "vapour_press"
     })
 
     # Round only mean values to 1 decimal
     agg_df["rel_humid_avg"] = agg_df["rel_humid_avg"].round(1)
     agg_df["wind_speed_avg"] = agg_df["wind_speed_avg"].round(1)
+    agg_df["vapour_press"] = agg_df["vapour_press"].round(1)
 
     # Merge on date + lat/lon (keep timestamp from dailydf)
     merged = pd.merge(
