@@ -4,10 +4,10 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from azure.storage.blob import BlobClient
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 import logging
 
-load_dotenv()
+#load_dotenv()
 
 
 FULL_FINLAND_BBOX = [19.0, 59.8, 32.0, 70.1]
@@ -59,15 +59,16 @@ def fetch_fmi_data(startdate, enddate, model_type):
         ],
         "kasvukausi": ['EffectiveTemperatureSum'],
         "synop": ['Temperature', 'WindSpeedMS', 'Humidity'],
-        "hourly": ['Precipitation1h', 'Humidity', 'WindSpeedMS', 'Temperature']
-        #Precipitation3h ei toimi
+        "hourly": ['Precipitation1h', 'Humidity', 'WindSpeedMS', 'Temperature'],
+        "snow": ['WaterEquivalentOfSnow']
     }
 
     model_map = {
         "daily": "kriging_suomi_daily",
         "kasvukausi": "kriging_suomi_kasvukausi",
         "synop": "kriging_suomi_synop",
-        "hourly": "kriging_suomi_hourly"
+        "hourly": "kriging_suomi_hourly",
+        "snow" : "kriging_suomi_snow"
     }
 
     if model_type not in model_map:

@@ -8,10 +8,10 @@ Author:
 Valtteri Airaksinen
 
 Version:
-0.0.1
+0.1.0
 
 Release Date:
-TBD
+28.8.2025
 
 
 ## Overview
@@ -76,7 +76,7 @@ weather-collector/
 | rel_humid_max | kriging_suomi_hourly | Humidity |
 | rel_humid_min | kriging_suomi_hourly | Humidity |
 | global_rad | krging_suomi_daily | DailyGlobalRadiation |
-| vapour_press | kriging_suomi_hourly | Temperature & Humidity ([Kaava 1](https://www.vaisala.com/fi/expert-article/relative-humidity-how-is-it-defined-and-calculated) & [Kaava 2](https://www.vaisala.com/fi/lp/make-your-job-easier-humidity-conversion-formulas))  |
+| vapour_press | kriging_suomi_hourly | Temperature & Humidity ([Formula 1](https://www.vaisala.com/fi/expert-article/relative-humidity-how-is-it-defined-and-calculated) & [Formula 2](https://www.vaisala.com/fi/lp/make-your-job-easier-humidity-conversion-formulas))  |
 | snow_depth | - | - |
 
 ---
