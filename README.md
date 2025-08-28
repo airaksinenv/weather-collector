@@ -44,7 +44,7 @@ weather-collector/
 ## Installation & Usage
 
 ### Prerequisites
-- Python 3.10
+- Python 3.13
 - Azure Functions Core Tools (for local testing)  
 - GitHub Actions enabled for CI/CD (if deploying automatically)
 
