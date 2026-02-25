@@ -1,4 +1,11 @@
 .env
 .venv
+__pycache__
 shared/__pycache__
+shared/test.py
 sandbox.ipynb
+data/
+tempsums.ipynb
+utils.py
+manual_running.ipynb
+manual_weather_collector.py

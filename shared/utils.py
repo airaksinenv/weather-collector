@@ -4,10 +4,10 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from azure.storage.blob import BlobClient
-#from dotenv import load_dotenv
+from dotenv import load_dotenv
 import logging
 
-#load_dotenv()
+load_dotenv()
 
 
 FULL_FINLAND_BBOX = [19.0, 59.8, 32.0, 70.1]
