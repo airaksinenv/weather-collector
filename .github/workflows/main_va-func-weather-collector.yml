@@ -70,5 +70,6 @@ jobs:
         id: deploy-to-function
         with:
           app-name: 'va-func-weather-collector'
+          slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_318F0832F0164857990995556DC891F7 }}
           package: release.zip
