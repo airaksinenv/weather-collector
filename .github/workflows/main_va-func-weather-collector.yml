@@ -24,13 +24,11 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      # Asennetaan riippuvuudet Azure Functions -oikeaan hakemistoon
-      - name: Install dependencies
+      - name: Install dependencies into Azure Functions package folder
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt --target ".python_packages/lib/site-packages"
 
-      # Luodaan deploy-zip
       - name: Create deployment zip
         run: |
           rm -f release.zip
@@ -42,13 +40,10 @@ jobs:
             -x ".venv/*" \
             -x "release.zip"
 
-      - name: Azure Login (Service Principal)
+      - name: Azure Login (Service Principal via creds)
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Deploy to Azure Functions (Flex Consumption)
         uses: Azure/functions-action@v1
