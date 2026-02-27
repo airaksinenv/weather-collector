@@ -1,8 +1,8 @@
 try:
-    from shared.utils import fetch_fmi_data, fetch_fmi_data_chunked, upload_weather_data, calculate_daily_from_hourly
+    from shared.utils import fetch_fmi_data_timerange, fetch_hourly_one_day, upload_weather_data, calculate_daily_from_hourly
 except Exception as e:
     logging.warning(e)
-    from utils import fetch_fmi_data, fetch_fmi_data_chunked, upload_weather_data, calculate_daily_from_hourly
+    from utils import fetch_fmi_data_timerange, fetch_hourly_one_day, upload_weather_data, calculate_daily_from_hourly
 from datetime import datetime, timedelta
 import logging
 
@@ -16,22 +16,22 @@ def main():
     
     #print('fetching data from kriging_suomi_daily...')
     logging.info('fetching data from kriging_suomi_daily...')
-    dailydf = fetch_fmi_data(startdate, enddate, 'daily')
+    dailydf = fetch_fmi_data_timerange(startdate, enddate, 'daily')
     logging.info('Success!')
 
     #print('fetching data from kriging_suomi_synop...')
     logging.info('fetching data from kriging_suomi_synop...')
-    threeH = fetch_fmi_data(startdate, enddate, 'synop')
+    threeH = fetch_fmi_data_timerange(startdate, enddate, 'synop')
     logging.info('Success!')
 
     #print('fetching data from kriging_suomi_kasvukausi...')
     logging.info('fetching data from kriging_suomi_kasvukausi...')
-    tempsum = fetch_fmi_data(startdate, enddate, 'kasvukausi')
+    tempsum = fetch_fmi_data_timerange(startdate, enddate, 'kasvukausi')
     logging.info('Success!')
 
     #print('fetching data from kriging_suomi_hourly...')
     logging.info('fetching data from kriging_suomi_hourly...')
-    hourly = fetch_fmi_data_chunked(startdate, enddate, 'hourly', chunk_days=1)
+    hourly = fetch_hourly_one_day(startdate, chunk_hours=6)
     hourly.dropna(inplace=True)
     hourly.reset_index(drop=True, inplace=True)
     #print('Calculating daily data from kriging_suomi_hourly...')
