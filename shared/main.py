@@ -1,6 +1,7 @@
 try:
     from shared.utils import fetch_fmi_data, upload_weather_data, calculate_daily_from_hourly
-except:
+except Exception as e:
+    logging.warning(e)
     from utils import fetch_fmi_data, upload_weather_data, calculate_daily_from_hourly
 from datetime import datetime, timedelta
 import logging
