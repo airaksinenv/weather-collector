@@ -2,14 +2,22 @@ import logging
 from datetime import datetime, timedelta
 
 import pandas as pd
-
-from shared.utils import (
-    fetch_fmi_data,
-    fetch_fmi_data_timerange,
-    aggregate_hourly_chunk,
-    combine_hourly_aggs,
-    upload_weather_data,
-)
+try:
+    from shared.utils import (
+        fetch_fmi_data,
+        fetch_fmi_data_timerange,
+        aggregate_hourly_chunk,
+        combine_hourly_aggs,
+        upload_weather_data,
+    )
+except:
+    from utils import (
+        fetch_fmi_data,
+        fetch_fmi_data_timerange,
+        aggregate_hourly_chunk,
+        combine_hourly_aggs,
+        upload_weather_data,
+    )
 
 def main():
     logging.info("Running main.py...")
