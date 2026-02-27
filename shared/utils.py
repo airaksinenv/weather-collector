@@ -2,14 +2,16 @@ import os
 import io
 import logging
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import requests
 import pandas as pd
 import numpy as np
 from azure.storage.blob import BlobClient
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
-# Optional local development support
+# Optional local dev support (Azure should use Application Settings)
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -25,9 +27,6 @@ if not API_KEY:
 # -------------------------
 # Requests session + retries
 # -------------------------
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
-
 def _make_session() -> requests.Session:
     retry = Retry(
         total=5,
@@ -45,6 +44,33 @@ def _make_session() -> requests.Session:
     return s
 
 SESSION = _make_session()
+
+# -------------------------
+# Maps
+# -------------------------
+PARAMS_MAP = {
+    "daily": [
+        "DailyMeanTemperature",
+        "MinimumTemperature24h",
+        "MaximumTemperature24h",
+        "Precipitation24h",
+        "MaximumWind",
+        "DailyGlobalRadiation",
+        "VolumetricSoilWaterLayer1",
+    ],
+    "kasvukausi": ["EffectiveTemperatureSum"],
+    "synop": ["Temperature", "WindSpeedMS", "Humidity"],
+    "hourly": ["Precipitation1h", "Humidity", "WindSpeedMS", "Temperature"],
+    "snow": ["WaterEquivalentOfSnow"],
+}
+
+MODEL_MAP = {
+    "daily": "kriging_suomi_daily",
+    "kasvukausi": "kriging_suomi_kasvukausi",
+    "synop": "kriging_suomi_synop",
+    "hourly": "kriging_suomi_hourly",
+    "snow": "kriging_suomi_snow",
+}
 
 # -------------------------
 # Parsing
@@ -74,29 +100,7 @@ def parse_fmi_data(json_data, params):
     return df
 
 # -------------------------
-# Common maps
-# -------------------------
-PARAMS_MAP = {
-    "daily": [
-        "DailyMeanTemperature", "MinimumTemperature24h", "MaximumTemperature24h",
-        "Precipitation24h", "MaximumWind", "DailyGlobalRadiation", "VolumetricSoilWaterLayer1"
-    ],
-    "kasvukausi": ["EffectiveTemperatureSum"],
-    "synop": ["Temperature", "WindSpeedMS", "Humidity"],
-    "hourly": ["Precipitation1h", "Humidity", "WindSpeedMS", "Temperature"],
-    "snow": ["WaterEquivalentOfSnow"],
-}
-
-MODEL_MAP = {
-    "daily": "kriging_suomi_daily",
-    "kasvukausi": "kriging_suomi_kasvukausi",
-    "synop": "kriging_suomi_synop",
-    "hourly": "kriging_suomi_hourly",
-    "snow": "kriging_suomi_snow",
-}
-
-# -------------------------
-# Date-based fetch (your original)
+# Fetch (date-only)
 # -------------------------
 def fetch_fmi_data(startdate, enddate, model_type):
     if model_type not in MODEL_MAP:
@@ -117,7 +121,6 @@ def fetch_fmi_data(startdate, enddate, model_type):
     logging.info(f"Fetching FMI: model={model} start={startdate} end={enddate}")
 
     try:
-        # NOTE: timeouts are important in Functions
         resp = SESSION.get(url, timeout=(10, 300))
         if resp.status_code != 200:
             logging.error(f"FMI HTTP {resp.status_code}: {resp.text[:500]}")
@@ -131,7 +134,7 @@ def fetch_fmi_data(startdate, enddate, model_type):
     return parse_fmi_data(data, params)
 
 # -------------------------
-# Datetime-based fetch (needed for hourly chunking)
+# Fetch (datetime range) - needed for hourly chunking
 # -------------------------
 def fetch_fmi_data_timerange(start_dt: datetime, end_dt: datetime, model_type: str) -> pd.DataFrame:
     if model_type not in MODEL_MAP:
@@ -169,75 +172,81 @@ def fetch_fmi_data_timerange(start_dt: datetime, end_dt: datetime, model_type: s
     return parse_fmi_data(data, params)
 
 # -------------------------
-# Hourly: fetch exactly 00:00 -> 00:00 next day in chunks
-# -------------------------
-def fetch_hourly_one_day(date_yyyy_mm_dd: str, chunk_hours: int = 6) -> pd.DataFrame:
-    """
-    Fetches hourly data for exactly one day:
-      date 00:00:00 -> (date+1) 00:00:00
-    but splits into smaller requests (e.g. 6h chunks).
-    """
-    day_start = datetime.strptime(date_yyyy_mm_dd, "%Y-%m-%d")
-    day_end = day_start + timedelta(days=1)
-
-    dfs = []
-    cur = day_start
-    while cur < day_end:
-        nxt = min(cur + timedelta(hours=chunk_hours), day_end)
-        logging.info(f"Hourly chunk: {cur} -> {nxt}")
-        dfs.append(fetch_fmi_data_timerange(cur, nxt, "hourly"))
-        cur = nxt
-
-    return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
-
-# -------------------------
-# Feature engineering (unchanged)
+# Hourly aggregation helpers (memory-safe)
 # -------------------------
 def vapour_pressure(temp_c, rel_humid):
     es = 0.6108 * np.exp((17.27 * temp_c) / (temp_c + 237.3))  # kPa
     ea = es * (rel_humid / 100.0)  # actual vapor pressure
     return ea * 10
 
-def calculate_daily_from_hourly(hourlydf, dailydf):
+def aggregate_hourly_chunk(hourlydf: pd.DataFrame) -> pd.DataFrame:
+    """
+    Aggregates ONE chunk of hourly data into partial sums/min/max so we can combine chunks later
+    without keeping all hourly rows in memory.
+    """
     hourlydf["timestamp"] = pd.to_datetime(hourlydf["timestamp"])
-    dailydf["timestamp"] = pd.to_datetime(dailydf["timestamp"])
-
     hourlydf["date"] = hourlydf["timestamp"].dt.date
-    dailydf["date"] = dailydf["timestamp"].dt.date
 
     hourlydf["vapour_press"] = vapour_pressure(hourlydf["Temperature"], hourlydf["Humidity"])
 
-    agg_df = (
+    agg = (
         hourlydf.groupby(["date", "latitude", "longitude"])
-        .agg({
-            "Humidity": ["min", "max", "mean"],
-            "WindSpeedMS": ["mean"],
-            "vapour_press": ["mean"]
-        })
+        .agg(
+            rel_humid_min=("Humidity", "min"),
+            rel_humid_max=("Humidity", "max"),
+            rel_humid_sum=("Humidity", "sum"),
+            rel_humid_count=("Humidity", "count"),
+            wind_speed_sum=("WindSpeedMS", "sum"),
+            wind_speed_count=("WindSpeedMS", "count"),
+            vapour_press_sum=("vapour_press", "sum"),
+            vapour_press_count=("vapour_press", "count"),
+        )
+        .reset_index()
+    )
+    return agg
+
+def combine_hourly_aggs(aggs: list[pd.DataFrame]) -> pd.DataFrame:
+    """
+    Combines partial aggregates across all chunks and produces final daily feature columns.
+    """
+    if not aggs:
+        return pd.DataFrame()
+
+    all_agg = pd.concat(aggs, ignore_index=True)
+
+    combined = (
+        all_agg.groupby(["date", "latitude", "longitude"], as_index=False)
+        .agg(
+            rel_humid_min=("rel_humid_min", "min"),
+            rel_humid_max=("rel_humid_max", "max"),
+            rel_humid_sum=("rel_humid_sum", "sum"),
+            rel_humid_count=("rel_humid_count", "sum"),
+            wind_speed_sum=("wind_speed_sum", "sum"),
+            wind_speed_count=("wind_speed_count", "sum"),
+            vapour_press_sum=("vapour_press_sum", "sum"),
+            vapour_press_count=("vapour_press_count", "sum"),
+        )
     )
 
-    agg_df.columns = ["_".join(col) for col in agg_df.columns]
-    agg_df = agg_df.reset_index()
+    combined["rel_humid_avg"] = (combined["rel_humid_sum"] / combined["rel_humid_count"]).round(1)
+    combined["wind_speed_avg"] = (combined["wind_speed_sum"] / combined["wind_speed_count"]).round(1)
+    combined["vapour_press"] = (combined["vapour_press_sum"] / combined["vapour_press_count"]).round(1)
 
-    agg_df = agg_df.rename(columns={
-        "Humidity_mean": "rel_humid_avg",
-        "Humidity_max": "rel_humid_max",
-        "Humidity_min": "rel_humid_min",
-        "WindSpeedMS_mean": "wind_speed_avg",
-        "vapour_press_mean": "vapour_press"
-    })
-
-    agg_df["rel_humid_avg"] = agg_df["rel_humid_avg"].round(1)
-    agg_df["wind_speed_avg"] = agg_df["wind_speed_avg"].round(1)
-    agg_df["vapour_press"] = agg_df["vapour_press"].round(1)
-
-    merged = pd.merge(dailydf, agg_df, on=["date", "latitude", "longitude"], how="left")
-    merged = merged.drop(columns=["date"])
-
-    return merged
+    return combined[
+        [
+            "date",
+            "latitude",
+            "longitude",
+            "rel_humid_avg",
+            "rel_humid_max",
+            "rel_humid_min",
+            "wind_speed_avg",
+            "vapour_press",
+        ]
+    ]
 
 # -------------------------
-# Upload (unchanged, but log stack)
+# Uploading
 # -------------------------
 def upload_weather_data(storage_account_name, container_name, filepath, data, file_type="csv"):
     try:
