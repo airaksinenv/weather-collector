@@ -31,7 +31,7 @@ def main():
 
     #print('fetching data from kriging_suomi_hourly...')
     logging.info('fetching data from kriging_suomi_hourly...')
-    hourly = fetch_hourly_one_day(startdate, chunk_hours=6)
+    hourly = fetch_hourly_one_day(startdate, chunk_hours=1)
     hourly.dropna(inplace=True)
     hourly.reset_index(drop=True, inplace=True)
     #print('Calculating daily data from kriging_suomi_hourly...')
