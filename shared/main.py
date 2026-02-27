@@ -38,6 +38,10 @@ def main():
     tempsum = fetch_fmi_data(startdate, enddate, "kasvukausi")
     logging.info("Success!")
 
+    logging.info("fetching data from kriging_suomi_snow...")
+    snow = fetch_fmi_data(startdate, enddate, "snow")
+    logging.info("Success!")
+
     # ----------------------------
     # HOURLY (stream + aggregate)
     # ----------------------------
@@ -83,6 +87,7 @@ def main():
         "daily": dailydf,
         "3h": threeH,
         "tempsum": tempsum,
+        "snow":snow
     }
 
     for label, df in files.items():
