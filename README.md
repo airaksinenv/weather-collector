@@ -77,8 +77,8 @@ weather-collector/
 | rel_humid_min | kriging_suomi_hourly | Humidity |
 | global_rad | kriging_suomi_daily | DailyGlobalRadiation |
 | vapour_press | kriging_suomi_hourly | Temperature & Humidity ([Formula 1](https://www.vaisala.com/fi/expert-article/relative-humidity-how-is-it-defined-and-calculated) & [Formula 2](https://www.vaisala.com/fi/lp/make-your-job-easier-humidity-conversion-formulas))  |
-| snow_depth | - | - |
-
+| snow_depth | kriging_suomi_snow | WaterEquivalentOfSnow |
+| VolumetricSoilWaterLayer1 | kriging_suomi_daily | VolumetricSoilWaterLayer1 |
 ---
 
 ### 3h weather data
@@ -100,6 +100,13 @@ weather-collector/
 | - | kriging_suomi_hourly | Temperature |
 
 ---
+
+### Potential additions
+| Required field | Source | Parameter name |
+|:-:|:-:|:-:|
+| Maanpinnan kosteus syvempi | fmi_soil_water | VolumetricSoilWaterLayer28 |
+| Maanpinnan kosteus syvempi | ecmwd_soil_water | VolumetricSoilWaterLayer28 |
+| - | palkriging_suomi | - |
 
 ## TBA
 
